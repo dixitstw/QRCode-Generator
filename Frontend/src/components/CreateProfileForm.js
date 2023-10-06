@@ -3,7 +3,7 @@ import { createProfile } from '../api';
 
 function CreateProfileForm() {
   const [formData, setFormData] = useState({
-    type: 'Personal',
+    type: '',
     name: '',
     email: '',
     address: '',
@@ -20,9 +20,12 @@ function CreateProfileForm() {
     e.preventDefault();
     try {
       const response = await createProfile(formData);
+      const createdProfileId = response._id;
+      alert('Profile created successfully');
+      window.location.href = `/view/${createdProfileId}`;
       if (response.message === 'Profile created successfully') {
         setFormData({
-            type: 'Personal',
+            type: '',
             name: '',
             email: '',
             address: '',
@@ -45,10 +48,7 @@ function CreateProfileForm() {
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label>Type:</label>
-          <select className="form-control" name="type" value={formData.type} onChange={handleChange}>
-            <option value="Personal">Personal</option>
-            <option value="Organization">Organization</option>
-          </select>
+          <input type="text" className="form-control" name="type" value={formData.type} onChange={handleChange} required/>
         </div>
         <div className="form-group">
           <label>Name:</label>

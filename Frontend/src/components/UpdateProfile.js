@@ -40,6 +40,8 @@ function UpdateProfile() {
     e.preventDefault();
     try {
       const response = await updateProfile(id, formData);
+      alert('Profile updated successfully');
+      window.location.href = `/view/${id}`;
       if (response.message === 'Profile updated successfully') {
         
         console.log(response);
@@ -57,17 +59,15 @@ function UpdateProfile() {
       <form onSubmit={handleSubmit}>
         <div className="mb-3">
           <label htmlFor="type" className="form-label">Type:</label>
-          <select
-            className="form-select"
+          <input
+            type="text"
+            className="form-control"
             id="type"
             name="type"
             value={formData.type}
             onChange={handleChange}
             required
-          >
-            <option value="Personal">Personal</option>
-            <option value="Organization">Organization</option>
-          </select>
+          />
         </div>
         <div className="mb-3">
           <label htmlFor="name" className="form-label">Name:</label>

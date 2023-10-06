@@ -27,7 +27,29 @@ export async function updateProfile(profileId, profileData) {
   return await response.json();
 }
 
+export async function createQR(qrData) {
+  const response = await fetch(`${BASE_URL}/qrs/create`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(qrData),
+  });
+  return await response.json();
+}
+
 export async function readQR(qrId) {
   const response = await fetch(`${BASE_URL}/qrs/read/${qrId}`);
+  return await response.json();
+}
+
+export async function updateQR(qrId, qrData) {
+  const response = await fetch(`${BASE_URL}/profiles/update/${qrId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(qrData),
+  });
   return await response.json();
 }

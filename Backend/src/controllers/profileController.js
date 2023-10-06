@@ -1,58 +1,53 @@
-const Profile = require('../models/profile');
-const QR = require('../models/qr');
-const qrcode = require('qrcode');
-const uniqid = require('uniqid');
+const PersonalProfile = require('../models/personalProfile');
+const OrganizationProfile = require('../models/organizationProfile');
 
 exports.createProfile = async (req, res) => {
   try {
     const { type, name, email, address, contact, website } = req.body;
 
-    if (type === 'Organization') {
-      const existingProfile = await Profile.findOne({ type: 'Organization' });
-      if (existingProfile) {
-        return res.status(400).json({ message: 'An organization profile already exists.' });
-      }
+    if (type === 'Personal') {
+      const personalProfile = new PersonalProfile({ type, name, email, address, contact, website });
+      await personalProfile.save();
+      res.status(201).json(personalProfile);
+    } else if (type === 'Organization') {
+      const organizationProfile = new OrganizationProfile({ type, name, email, address, contact, website });
+      await organizationProfile.save();
+
+      res.status(201).json(organizationProfile);
+    } else {
+      res.status(400).json({ error: 'Invalid profile type' });
     }
 
-    const qrCodeFilename = uniqid() + '.png';
-    
-    //Generate qr code
-    const qrCodeData = `${type}\n${name}\n${email}\n${address}\n${contact}\n${website}`;
-    await qrcode.toFile(`files/${qrCodeFilename}`, qrCodeData);
-
-    // Create a new QR record
-    const qr = new QR({ data: qrCodeData });
-    await qr.save();
-
-    const profile = new Profile({
-      type,
-      name,
-      email,
-      address,
-      contact,
-      website,
-      qr: qr._id,
-    });
-    await profile.save();
-
-    return res.status(201).json({ message: 'Profile created successfully.'});
+    if (type === 'Organization' && req.body.personalProfileId) {
+      const organizationProfile = await OrganizationProfile.findById(organizationProfile._id);
+      if (organizationProfile) {
+        organizationProfile.employees.push(personalProfile._id);
+        await organizationProfile.save();
+      }
+    }
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'Internal Server Error' });
+    res.status(400).json({ error: error.message });
   }
 };
+
 
 exports.readProfile = async (req, res) => {
   try {
     const profileId = req.params.id;
-    const profile = await Profile.findById(profileId).populate('qr');
-    if (!profile) {
-      return res.status(404).json({ message: 'Profile not found.' });
+
+    const personalProfile = await PersonalProfile.findById(profileId);
+    if (personalProfile) {
+      return res.status(200).json(personalProfile);
     }
-    return res.status(200).json({ profile });
+
+    const organizationProfile = await OrganizationProfile.findById(profileId);
+    if (organizationProfile) {
+      return res.status(200).json(organizationProfile);
+    }
+
+    res.status(404).json({ error: 'Profile not found' });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'Internal Server Error' });
+    res.status(400).json({ error: error.message });
   }
 };
 
@@ -61,35 +56,30 @@ exports.updateProfile = async (req, res) => {
     const profileId = req.params.id;
     const { type, name, email, address, contact, website } = req.body;
 
-    if (type === 'Organization') {
-      const existingProfile = await Profile.findOne({ type: 'Organization', _id: { $ne: profileId } });
-      if (existingProfile) {
-        return res.status(400).json({ message: 'An organization profile already exists.' });
+    let profile;
+
+    const personalProfile = await PersonalProfile.findById(profileId);
+    if (personalProfile) {
+      profile = personalProfile;
+    } else {
+      const organizationProfile = await OrganizationProfile.findById(profileId);
+      if (organizationProfile) {
+        profile = organizationProfile;
+      } else {
+        return res.status(404).json({ error: 'Profile not found' });
       }
     }
-
-    const profile = await Profile.findById(profileId);
-    if (!profile) {
-      return res.status(404).json({ message: 'Profile not found.' });
-    }
-
-    // Generate a new QR code with updated data
-    const qrCodeData = `${type}\n${name}\n${email}\n${address}\n${contact}\n${website}`;
-    await qrcode.toFile(`files/${profile.qr}.png`, qrCodeData);
-
-
-    profile.type = type;
-    profile.name = name;
-    profile.email = email;
-    profile.address = address;
-    profile.contact = contact;
-    profile.website = website;
+    
+    if (type) profile.name = type;
+    if (name) profile.name = name;
+    if (email) profile.email = email;
+    if (address) profile.address = address;
+    if (contact) profile.contact = contact;
+    if (website) profile.website = website;
 
     await profile.save();
-
-    return res.status(200).json({ message: 'Profile updated successfully.' });
+    res.status(200).json({ message: 'Profile updated successfully' });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'Internal Server Error' });
+    res.status(400).json({ error: error.message });
   }
 };

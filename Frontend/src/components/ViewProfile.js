@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom'; 
-import { readProfile } from '../api';
+
+import { readProfile } from '../api'; 
 
 function ViewProfile() {
   const { id } = useParams(); 
@@ -8,51 +9,40 @@ function ViewProfile() {
   const [profile, setProfile] = useState(null);
   const [showProfile, setShowProfile] = useState(false);
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const response = await readProfile(id); 
-        if (response.profile) {
-          setProfile(response.profile);
-        } else {
-          console.error('Profile not found');
-        }
-      } catch (error) {
-        console.error('Error fetching profile', error);
-      }
-    };
-
-    fetchProfile();
-  }, [id]);
-
-  const handleViewProfile = () => {
-    setShowProfile(true);
+  const handleViewProfileClick = async () => {
+    try {
+      const result = await readProfile(id); 
+      setProfile(result);
+      setShowProfile(true);
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    }
   };
 
   return (
     <div>
-      <h2>View Profile</h2>
-      {showProfile ? (
+      <h2>This is the View Pofile Page!</h2>
+      <button onClick={handleViewProfileClick} className="btn btn-primary">View Profile</button>
+      {showProfile && (
         <div>
-          <p>Type: {profile?.type}</p>
-          <p>Name: {profile?.name}</p>
-          <p>Email: {profile?.email}</p>
-          <p>Address: {profile?.address}</p>
-          <p>Contact: {profile?.contact}</p>
-          <p>Website: {profile?.website}</p>
+          <h2>Profile Details</h2>
+          <p>Type: {profile.type}</p>
+          <p>Name: {profile.name}</p>
+          <p>Email: {profile.email}</p>
+          <p>Address: {profile.address}</p>
+          <p>Contact: {profile.contact}</p>
+          <p>Website: {profile.website}</p>
 
-          <div>
-       <Link to={`/viewqr/${id}`}>
-            <button className="btn btn-primary ">View QR Code</button>
+          <Link to={`/update/${id}`}>
+            <button className='btn btn-primary'>Update Profile</button>
           </Link>
-          </div>
-        </div>
-      ) : (
-        <div>
-          <button onClick={handleViewProfile} className="btn btn-primary">View Profile</button>
-        </div>
-      )}
 
+          <Link to={`/createqr/${id}`}>
+            <button className='btn btn-primary'>Generate QR code</button>
+          </Link>
+        </div>
+        
+      )}
     </div>
   );
 }
